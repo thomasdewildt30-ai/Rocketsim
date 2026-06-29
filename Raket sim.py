@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
 step = 0.1
 mr = 20
 mf = 100
@@ -8,7 +7,6 @@ fflow = 1
 Fstuw = 2500
 it = 10000
 k = 0.017
-
 # Setup
 t = 0
 h = 0
@@ -23,12 +21,10 @@ flwl = []
 fstuwl = []
 effl = []
 fresl = []
-
 flw = 0
 g = 9.81
 R = 6371000
 x = True
-
 def trap(ht, Fstuwt, mrt, fflowt):
     global h, Fstuw, mr, fflow, x
     if h > ht and x:
@@ -36,12 +32,12 @@ def trap(ht, Fstuwt, mrt, fflowt):
         mr = mrt
         fflow = fflowt
         x = False
-       
+      
 def parachute(kp, hp):
     global k, h, v
     if v < 0 and h < hp:
         k = kp
-       
+      
 for i in range(it):
     Fn = 0
     R = 6371000
@@ -49,24 +45,24 @@ for i in range(it):
     ad = np.exp(-h / 8500)
     mtot = mr + mf
     eff = 1 - (ad * 0.5)
-    
+   
     parachute(0.05, 2500)
     parachute(0.1, 1500)
-   
+  
     Flw = ad * -k * v * abs(v)
     trap(1500, 1600, 12, 0.6)
-    
+   
     if h >= 0:
         Fz = mtot * -g
     if h == 0:
         Fn = -Fz
-        
+       
     if mtot > mr:
         Fs = Fstuw * eff
         mf -= fflow * step
     else:
         Fs = 0
-        
+       
     Fres = Fz + Fs + Flw + Fn
     a = Fres / mtot
     v = v + a * step
@@ -74,7 +70,7 @@ for i in range(it):
     h = max(h, 0)
     if v < 0 and h == 0:
         v = 0
-        
+       
     t += step
     tl.append(t)
     hl.append(h / 1000)
@@ -86,15 +82,17 @@ for i in range(it):
     fstuwl.append(Fs)
     effl.append(eff * 100)
     fresl.append(Fres)
+    
+    # break functie
     l10h = 0
     if t > 5:
-        for q in range(10):
-            l10h += hl[i-q]
-        if l10h < 0.1: break
+        for q in range(10):
+            l10h += hl[i-q]
+        if l10h < 0.0001: 
+            break
 
 # Graph drawing
 fig, ax = plt.subplots(3, 3)
-
 ax[0,0].plot(tl, hl)
 ax[0,1].plot(tl, vl)
 ax[0,2].plot(tl, fstuwl)
