@@ -86,6 +86,10 @@ for i in range(it):
     fstuwl.append(Fs)
     effl.append(eff * 100)
     fresl.append(Fres)
+    if t > 5:
+        for q in range(10):
+            l10h += hl[i-q]
+        if l10h < 0.1: break
 
 # Graph drawing
 fig, ax = plt.subplots(3, 3)
