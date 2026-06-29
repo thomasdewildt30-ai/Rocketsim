@@ -86,6 +86,7 @@ for i in range(it):
     fstuwl.append(Fs)
     effl.append(eff * 100)
     fresl.append(Fres)
+    l10h = 0
     if t > 5:
         for q in range(10):
             l10h += hl[i-q]
