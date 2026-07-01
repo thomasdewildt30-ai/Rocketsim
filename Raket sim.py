@@ -1,93 +1,99 @@
 import matplotlib.pyplot as plt
 import numpy as np
-step = 0.1
-mr = 20
-mf = 100
-fflow = 1
-Fstuw = 2500
-it = 10000
-k = 0.017
+import time as ti
+start = ti.time()
+
+# Simulation setup
+step = 0.1              # Timestep in seconds
+
+# Rocket stats
+mr = 40                 # Mass rocket in kg
+mf = 80                 # Mass fuel in kg
+k = 0.05                # Air friction coefficient
+
+# Rocket engine stats
+g0 = 9.81               # Referecne value engine
+ISP = 250               # Engine efficincy value
+Fstuw = 2500            # Initial rocket thrust in Newton
+
+# Earth information
+R = 6371000             # Radius earth
+mass_Earth = 6*10**24   # Mass of the Earth
+G = 6.7*10**-11         # Gravitational constant
+
+
+
+pstate = [[0.1,1000],[0.2, 750],[0.3,500]] # Parachuteparameters, in the form [new k, activation height]
+stagestate = [[1500, 1600, 0.5* mr, True,0],[10000, 1300, 0.3*mr, True,1]] # Stage parameters, in the form [activation height, new thrust, new rocket mass, switch,index]
+
 # Setup
-t = 0
-h = 0
-v = 0
-tl = []
-hl = []
-vl = []
-al = []
-gl = []
-adl = []
-flwl = []
-fstuwl = []
-effl = []
-fresl = []
-flw = 0
-g = 9.81
-R = 6371000
+t = h = v = flm = Fres = 0
+
+tl, hl, vl, al, gl, adl, flwl, fstuwl, effl, fresl = ([] for _ in range(10))
+
 x = True
-def trap(ht, Fstuwt, mrt, fflowt):
-    global h, Fstuw, mr, fflow, x
-    if h > ht and x:
+
+mtot = mr+mf
+
+def trap(ht, Fstuwt, mrt, ss, l):
+    global h, Fstuw, mr
+    if h > ht and ss:
         Fstuw = Fstuwt
         mr = mrt
-        fflow = fflowt
-        x = False
-      
+        stagestate[l][4] = False
+        
 def parachute(kp, hp):
     global k, h, v
     if v < 0 and h < hp:
         k = kp
-      
-for i in range(it):
-    Fn = 0
-    R = 6371000
-    g = 9.81 * (R / (R + h))**2
+
+
+while True:
+    
+    g =  G * mass_Earth/(R+h)**2
     ad = np.exp(-h / 8500)
-    mtot = mr + mf
-    eff = 1 - (ad * 0.5)
-   
-    parachute(0.05, 2500)
-    parachute(0.1, 1500)
-  
-    Flw = ad * -k * v * abs(v)
-    trap(1500, 1600, 12, 0.6)
-   
-    if h >= 0:
-        Fz = mtot * -g
-    if h == 0:
-        Fn = -Fz
+
+    for p in pstate:
+        parachute(*p)
+    
+    for stage in stagestate:
+        trap(*stage)
+    
        
     if mtot > mr:
+        eff = 1 - (ad * 0.15)
         Fs = Fstuw * eff
+        fflow = Fstuw/(g0*ISP)
         mf -= fflow * step
+        mtot = mr + mf
+        flm += step
     else:
         Fs = 0
-       
+        eff = 0
+    if h >= 0:
+        Fz = mtot * -g
+        Fn = 0
+    if h == 0 and Fres < 0:
+        Fn = -Fz
+    
+    Flw = ad * -k * v * abs(v)
     Fres = Fz + Fs + Flw + Fn
     a = Fres / mtot
     v = v + a * step
     h = h + v * step
     h = max(h, 0)
+
     if v < 0 and h == 0:
         v = 0
-       
+    for list1,listv in zip([tl,hl,vl,al,gl,adl,flwl,fstuwl,effl,fresl],[t,h/1000,v,a,g,ad*1.225,abs(Flw),Fs,eff*100,Fres]):
+        list1.append(listv)
     t += step
-    tl.append(t)
-    hl.append(h / 1000)
-    vl.append(v)
-    al.append(a)
-    gl.append(g)
-    adl.append(ad * 1.225)
-    flwl.append(Flw)
-    fstuwl.append(Fs)
-    effl.append(eff * 100)
-    fresl.append(Fres)
     
     # break functie
     l10h = 0
     if t > 5:
-        for q in range(10):
-            l10h += hl[i-q]
+        for q in range(1, 11):
+            l10h += hl[-q]
         if l10h < 0.0001: 
             break
 
@@ -140,5 +146,10 @@ ax[2,0].axhline(0,color="black")
 ax[2,1].axhline(0,color="black")
 ax[2,2].axhline(0,color="black")
 
+ax[0,0].axvline(flm,linestyle=":",color="black")
+ax[0,1].axvline(flm,linestyle=":",color="black")
+ax[2,2].axvline(flm,linestyle=":",color="black")
+
 plt.tight_layout()
+print(ti.time()-start)
 plt.show()
